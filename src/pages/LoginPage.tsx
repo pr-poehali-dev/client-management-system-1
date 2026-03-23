@@ -24,9 +24,6 @@ export default function LoginPage({ ctx }: Props) {
     return 'Управляющий';
   };
 
-  const selectedUser = users.find(u => u.id === selected);
-  const isDirector = selectedUser?.role === 'director';
-
   const handleSelect = (id: string) => {
     setSelected(id);
     setPassword('');
@@ -77,30 +74,23 @@ export default function LoginPage({ ctx }: Props) {
 
         {selected && (
           <div className="mb-4 animate-fade-in">
-            {isDirector ? (
-              <div className="px-4 py-3 rounded-lg bg-secondary border border-border text-sm text-muted-foreground flex items-center gap-2">
-                <Icon name="ShieldCheck" size={15} />
-                Управляющий может войти без пароля
-              </div>
-            ) : (
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                  placeholder="Введите пароль"
-                  className={`w-full px-4 py-3 rounded-lg border bg-card text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground pr-10 ${error ? 'border-destructive' : 'border-border'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
-                </button>
-              </div>
-            )}
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="Введите пароль"
+                className={`w-full px-4 py-3 rounded-lg border bg-card text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground pr-10 ${error ? 'border-destructive' : 'border-border'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
+              </button>
+            </div>
             {error && (
               <p className="text-xs text-destructive mt-2 flex items-center gap-1.5">
                 <Icon name="CircleAlert" size={12} />

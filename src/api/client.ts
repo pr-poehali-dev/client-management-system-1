@@ -34,11 +34,8 @@ export async function addItem(entity: string, body: object) {
   return res.json();
 }
 
-export async function updateItem(entity: string, body: object, action?: string) {
-  const url = action
-    ? `${URLS.settings}?entity=${entity}&action=${action}`
-    : `${URLS.settings}?entity=${entity}`;
-  const res = await fetch(url, {
+export async function updateItem(entity: string, body: object) {
+  const res = await fetch(`${URLS.settings}?entity=${entity}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -48,7 +45,7 @@ export async function updateItem(entity: string, body: object, action?: string) 
 
 export async function removeItem(entity: string, id: string) {
   const res = await fetch(`${URLS.settings}?entity=${entity}`, {
-    method: 'DELETE',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),
   });
@@ -65,7 +62,7 @@ export async function authUser(userId: string, password: string) {
 }
 
 export async function setUserPassword(userId: string, password: string) {
-  const res = await fetch(`${URLS.settings}?entity=users&action=password`, {
+  const res = await fetch(`${URLS.settings}?entity=users`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: userId, password }),

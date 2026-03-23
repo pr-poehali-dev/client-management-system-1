@@ -16,12 +16,6 @@ CORS = {
 }
 
 
-def esc(val):
-    if val is None:
-        return 'NULL'
-    return "'" + str(val).replace("'", "''") + "'"
-
-
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
@@ -33,7 +27,8 @@ def handler(event: dict, context) -> dict:
         body = json.loads(event.get('body') or '{}')
         event_id = str(uuid.uuid4())
         cur.execute(
-            f"INSERT INTO events (id, type, branch_id, user_id, channel_id, ad_source_id) VALUES ({esc(event_id)},{esc(body['type'])},{esc(body['branchId'])},{esc(body['userId'])},{esc(body['channelId'])},{esc(body['adSourceId'])}) RETURNING id, created_at"
+            "INSERT INTO events (id, type, branch_id, user_id, channel_id, ad_source_id) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id, created_at",
+            (event_id, body['type'], body['branchId'], body['userId'], body['channelId'], body['adSourceId'])
         )
         row = cur.fetchone()
         conn.commit()
@@ -47,17 +42,22 @@ def handler(event: dict, context) -> dict:
 
     params = event.get('queryStringParameters') or {}
     filters = []
+    values = []
 
     if params.get('branchId'):
-        filters.append(f"e.branch_id = {esc(params['branchId'])}")
+        filters.append("e.branch_id = %s")
+        values.append(params['branchId'])
     if params.get('userId'):
-        filters.append(f"e.user_id = {esc(params['userId'])}")
+        filters.append("e.user_id = %s")
+        values.append(params['userId'])
     if params.get('type'):
-        filters.append(f"e.type = {esc(params['type'])}")
+        filters.append("e.type = %s")
+        values.append(params['type'])
 
     where = ('WHERE ' + ' AND '.join(filters)) if filters else ''
     cur.execute(
-        f"SELECT e.id, e.type, e.branch_id, e.user_id, e.channel_id, e.ad_source_id, e.created_at FROM events e {where} ORDER BY e.created_at DESC LIMIT 500"
+        f"SELECT e.id, e.type, e.branch_id, e.user_id, e.channel_id, e.ad_source_id, e.created_at FROM events e {where} ORDER BY e.created_at DESC LIMIT 500",
+        values
     )
     events_list = [
         {

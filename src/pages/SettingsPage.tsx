@@ -11,16 +11,7 @@ export default function SettingsPage({ ctx }: Props) {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
-  const [editingSaving, setEditingSaving] = useState(false);
-
-  const {
-    state,
-    addChannel, toggleChannel, removeChannel,
-    addAdSource, toggleAdSource, removeAdSource,
-    addBranch, updateBranch, removeBranch,
-  } = ctx;
+  const { state, addChannel, toggleChannel, removeChannel, addAdSource, toggleAdSource, removeAdSource, addBranch } = ctx;
   const { channels, adSources, branches } = state;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -37,22 +28,6 @@ export default function SettingsPage({ ctx }: Props) {
     else await addBranch(newName.trim());
     setNewName('');
     setSaving(false);
-  };
-
-  const startEdit = (id: string, name: string) => {
-    setEditingId(id);
-    setEditingName(name);
-  };
-
-  const cancelEdit = () => { setEditingId(null); setEditingName(''); };
-
-  const handleEditSave = async () => {
-    if (!editingId || !editingName.trim() || editingSaving) return;
-    setEditingSaving(true);
-    await updateBranch(editingId, editingName.trim());
-    setEditingId(null);
-    setEditingName('');
-    setEditingSaving(false);
   };
 
   const renderChannels = () => (
@@ -120,57 +95,11 @@ export default function SettingsPage({ ctx }: Props) {
   const renderBranches = () => (
     <div className="space-y-2">
       {branches.map(item => (
-        <div key={item.id} className="bg-card border border-border rounded-lg overflow-hidden">
-          {editingId === item.id ? (
-            <div className="flex items-center gap-2 px-4 py-2.5">
-              <input
-                value={editingName}
-                onChange={e => setEditingName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleEditSave(); if (e.key === 'Escape') cancelEdit(); }}
-                autoFocus
-                className="flex-1 px-3 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
-              />
-              <button
-                onClick={handleEditSave}
-                disabled={!editingName.trim() || editingSaving}
-                className="px-3 py-1.5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 transition-all flex items-center gap-1.5"
-              >
-                {editingSaving
-                  ? <span className="w-3.5 h-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                  : <Icon name="Check" size={14} />}
-                Сохранить
-              </button>
-              <button
-                onClick={cancelEdit}
-                className="px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Отмена
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Icon name="Building2" size={16} className="text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{item.name}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => startEdit(item.id, item.name)}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
-                  title="Переименовать"
-                >
-                  <Icon name="Pencil" size={14} />
-                </button>
-                <button
-                  onClick={() => removeBranch(item.id)}
-                  className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
-                  title="Удалить"
-                >
-                  <Icon name="Trash2" size={14} />
-                </button>
-              </div>
-            </div>
-          )}
+        <div key={item.id} className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Icon name="Building2" size={16} className="text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">{item.name}</span>
+          </div>
         </div>
       ))}
     </div>
@@ -187,7 +116,7 @@ export default function SettingsPage({ ctx }: Props) {
         {tabs.map(t => (
           <button
             key={t.id}
-            onClick={() => { setTab(t.id); setNewName(''); cancelEdit(); }}
+            onClick={() => { setTab(t.id); setNewName(''); }}
             className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${tab === t.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {t.label}
