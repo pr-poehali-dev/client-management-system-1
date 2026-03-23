@@ -27,6 +27,7 @@ export interface AppContext {
   toggleAdSource: (id: string, active: boolean) => Promise<void>;
   removeAdSource: (id: string) => Promise<void>;
   addBranch: (name: string) => Promise<void>;
+  removeBranch: (id: string) => Promise<void>;
   addUser: (user: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   removeUser: (id: string) => void;
   updateUserPassword: (userId: string, password: string) => Promise<void>;
@@ -109,6 +110,11 @@ export default function App() {
     setState(s => ({ ...s, branches: [...s.branches, res] }));
   };
 
+  const removeBranch = async (id: string) => {
+    await removeItem('branches', id);
+    setState(s => ({ ...s, branches: s.branches.filter(b => b.id !== id) }));
+  };
+
   const addUser = async (user: Omit<User, 'id'> & { password?: string }) => {
     const res = await addItem('users', { name: user.name, role: user.role, branchId: user.branchId, password: user.password || '' });
     setState(s => ({ ...s, users: [...s.users, res] }));
@@ -137,6 +143,7 @@ export default function App() {
     toggleAdSource,
     removeAdSource,
     addBranch,
+    removeBranch,
     addUser,
     removeUser,
     updateUserPassword,

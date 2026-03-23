@@ -11,7 +11,7 @@ export default function SettingsPage({ ctx }: Props) {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { state, addChannel, toggleChannel, removeChannel, addAdSource, toggleAdSource, removeAdSource, addBranch } = ctx;
+  const { state, addChannel, toggleChannel, removeChannel, addAdSource, toggleAdSource, removeAdSource, addBranch, removeBranch } = ctx;
   const { channels, adSources, branches } = state;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -100,6 +100,13 @@ export default function SettingsPage({ ctx }: Props) {
             <Icon name="Building2" size={16} className="text-muted-foreground" />
             <span className="text-sm font-medium text-foreground">{item.name}</span>
           </div>
+          <button
+            onClick={() => removeBranch(item.id)}
+            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+            title="Удалить"
+          >
+            <Icon name="Trash2" size={14} />
+          </button>
         </div>
       ))}
     </div>
