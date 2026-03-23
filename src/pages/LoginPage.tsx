@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { AppContext } from '@/App';
+import Icon from '@/components/ui/icon';
 
 interface Props { ctx: AppContext; }
 
 export default function LoginPage({ ctx }: Props) {
   const [selected, setSelected] = useState<string>('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const { users, branches } = ctx.state;
 
@@ -19,9 +24,21 @@ export default function LoginPage({ ctx }: Props) {
     return 'Управляющий';
   };
 
-  const handleLogin = () => {
-    const user = users.find(u => u.id === selected);
-    if (user) ctx.login(user);
+  const handleSelect = (id: string) => {
+    setSelected(id);
+    setPassword('');
+    setError('');
+  };
+
+  const handleLogin = async () => {
+    if (!selected || loading) return;
+    setLoading(true);
+    setError('');
+    const res = await ctx.login(selected, password);
+    if (!res.ok) {
+      setError(res.error || 'Ошибка входа');
+    }
+    setLoading(false);
   };
 
   return (
@@ -33,11 +50,11 @@ export default function LoginPage({ ctx }: Props) {
           <p className="text-muted-foreground mt-2 text-sm">Выберите сотрудника для продолжения</p>
         </div>
 
-        <div className="space-y-2 mb-8">
+        <div className="space-y-2 mb-6">
           {users.map(user => (
             <button
               key={user.id}
-              onClick={() => setSelected(user.id)}
+              onClick={() => handleSelect(user.id)}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-lg border text-left transition-all duration-150 ${
                 selected === user.id
                   ? 'border-foreground bg-foreground text-background'
@@ -55,12 +72,41 @@ export default function LoginPage({ ctx }: Props) {
           ))}
         </div>
 
+        {selected && (
+          <div className="mb-4 animate-fade-in">
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="Введите пароль"
+                className={`w-full px-4 py-3 rounded-lg border bg-card text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground pr-10 ${error ? 'border-destructive' : 'border-border'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={16} />
+              </button>
+            </div>
+            {error && (
+              <p className="text-xs text-destructive mt-2 flex items-center gap-1.5">
+                <Icon name="CircleAlert" size={12} />
+                {error}
+              </p>
+            )}
+          </div>
+        )}
+
         <button
           onClick={handleLogin}
-          disabled={!selected}
-          className="w-full py-3 rounded-lg bg-foreground text-background font-medium text-sm transition-all duration-150 hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={!selected || loading}
+          className="w-full py-3 rounded-lg bg-foreground text-background font-medium text-sm transition-all duration-150 hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Войти
+          {loading && <span className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />}
+          {loading ? 'Проверка...' : 'Войти'}
         </button>
       </div>
     </div>

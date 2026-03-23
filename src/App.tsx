@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AppState, User, CRMEvent, Branch, Channel, AdSource } from '@/types/crm';
 import { initialState } from '@/data/initial';
-import { fetchData, fetchEvents, createEvent, addItem, updateItem, removeItem } from '@/api/client';
+import { fetchData, fetchEvents, createEvent, addItem, updateItem, removeItem, authUser, setUserPassword } from '@/api/client';
 import LoginPage from '@/pages/LoginPage';
 import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -17,7 +17,7 @@ export interface AppContext {
   loading: boolean;
   currentPage: PageType;
   setPage: (page: PageType) => void;
-  login: (user: User) => void;
+  login: (userId: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   addEvent: (event: Omit<CRMEvent, 'id' | 'createdAt'>) => Promise<void>;
   addChannel: (name: string) => Promise<void>;
@@ -27,8 +27,9 @@ export interface AppContext {
   toggleAdSource: (id: string, active: boolean) => Promise<void>;
   removeAdSource: (id: string) => Promise<void>;
   addBranch: (name: string) => Promise<void>;
-  addUser: (user: Omit<User, 'id'>) => Promise<void>;
+  addUser: (user: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   removeUser: (id: string) => void;
+  updateUserPassword: (userId: string, password: string) => Promise<void>;
   reloadData: () => Promise<void>;
 }
 
@@ -53,9 +54,13 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, []);
 
-  const login = (user: User) => {
-    setState(s => ({ ...s, currentUser: user }));
-    setCurrentPage('dashboard');
+  const login = async (userId: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+    const res = await authUser(userId, password);
+    if (res.ok) {
+      setState(s => ({ ...s, currentUser: res.user as User }));
+      setCurrentPage('dashboard');
+    }
+    return res;
   };
 
   const logout = () => {
@@ -104,13 +109,17 @@ export default function App() {
     setState(s => ({ ...s, branches: [...s.branches, res] }));
   };
 
-  const addUser = async (user: Omit<User, 'id'>) => {
-    const res = await addItem('users', { name: user.name, role: user.role, branchId: user.branchId });
+  const addUser = async (user: Omit<User, 'id'> & { password?: string }) => {
+    const res = await addItem('users', { name: user.name, role: user.role, branchId: user.branchId, password: user.password || '' });
     setState(s => ({ ...s, users: [...s.users, res] }));
   };
 
   const removeUser = (id: string) => {
     setState(s => ({ ...s, users: s.users.filter(u => u.id !== id) }));
+  };
+
+  const updateUserPassword = async (userId: string, password: string) => {
+    await setUserPassword(userId, password);
   };
 
   const ctx: AppContext = {
@@ -130,6 +139,7 @@ export default function App() {
     addBranch,
     addUser,
     removeUser,
+    updateUserPassword,
     reloadData: loadAll,
   };
 

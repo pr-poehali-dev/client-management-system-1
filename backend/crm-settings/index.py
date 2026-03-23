@@ -1,11 +1,12 @@
 """
 Управление справочниками CRM: каналы, источники, филиалы, пользователи.
 Параметр entity в query: channels | sources | branches | users
-POST — добавить, PUT — обновить (active toggle), PATCH — удалить по id
+POST — добавить, PUT — обновить, PATCH — удалить/установить пароль по id
 """
 import json
 import os
 import uuid
+import hashlib
 import psycopg2
 
 
@@ -14,6 +15,10 @@ CORS = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
 }
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 
 def handler(event: dict, context) -> dict:
@@ -66,12 +71,19 @@ def handler(event: dict, context) -> dict:
         if method == 'POST':
             new_id = str(uuid.uuid4())
             branch_id = body.get('branchId') or None
+            password = body.get('password') or ''
+            ph = hash_password(password) if password else None
             cur.execute(
-                "INSERT INTO users (id, name, role, branch_id) VALUES (%s, %s, %s, %s) RETURNING id, name, role, branch_id",
-                (new_id, body['name'], body['role'], branch_id)
+                "INSERT INTO users (id, name, role, branch_id, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id, name, role, branch_id",
+                (new_id, body['name'], body['role'], branch_id, ph)
             )
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'role': r[2], 'branchId': r[3]}
+        elif method == 'PUT':
+            password = body.get('password') or ''
+            ph = hash_password(password) if password else None
+            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (ph, body['id']))
+            result = {'ok': True}
         elif method == 'PATCH':
             cur.execute("UPDATE users SET role = 'deleted' WHERE id = %s", (body['id'],))
             result = {'ok': True}

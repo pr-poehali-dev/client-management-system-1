@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Auth with wrong user",
+      "method": "POST",
+      "path": "/",
+      "body": {"userId": "nonexistent", "password": "test"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": false},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 {
+  "crm-auth": "https://functions.poehali.dev/4176592f-e798-44c9-b7aa-7c0198e26a4e",
   "crm-events": "https://functions.poehali.dev/f614574a-f9bf-445c-914b-82ab2c291f4e",
   "crm-settings": "https://functions.poehali.dev/1cdff91e-c7f7-4694-9823-d864ccae0cda",
   "crm-data": "https://functions.poehali.dev/094b0301-3f96-4c9b-9e00-153c80703b69"
