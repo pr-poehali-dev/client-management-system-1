@@ -41,3 +41,12 @@ export async function updateItem(entity: string, body: object) {
   });
   return res.json();
 }
+
+export async function removeItem(entity: string, id: string) {
+  const res = await fetch(`${URLS.settings}?entity=${entity}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  return res.json();
+}

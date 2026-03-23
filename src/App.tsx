@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AppState, User, CRMEvent, Branch, Channel, AdSource } from '@/types/crm';
 import { initialState } from '@/data/initial';
-import { fetchData, fetchEvents, createEvent, addItem, updateItem } from '@/api/client';
+import { fetchData, fetchEvents, createEvent, addItem, updateItem, removeItem } from '@/api/client';
 import LoginPage from '@/pages/LoginPage';
 import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -22,10 +22,13 @@ export interface AppContext {
   addEvent: (event: Omit<CRMEvent, 'id' | 'createdAt'>) => Promise<void>;
   addChannel: (name: string) => Promise<void>;
   toggleChannel: (id: string, active: boolean) => Promise<void>;
+  removeChannel: (id: string) => Promise<void>;
   addAdSource: (name: string) => Promise<void>;
   toggleAdSource: (id: string, active: boolean) => Promise<void>;
+  removeAdSource: (id: string) => Promise<void>;
   addBranch: (name: string) => Promise<void>;
   addUser: (user: Omit<User, 'id'>) => Promise<void>;
+  removeUser: (id: string) => void;
   reloadData: () => Promise<void>;
 }
 
@@ -76,6 +79,11 @@ export default function App() {
     setState(s => ({ ...s, channels: s.channels.map(c => c.id === id ? { ...c, active } : c) }));
   };
 
+  const removeChannel = async (id: string) => {
+    await removeItem('channels', id);
+    setState(s => ({ ...s, channels: s.channels.filter(c => c.id !== id) }));
+  };
+
   const addAdSource = async (name: string) => {
     const res = await addItem('sources', { name });
     setState(s => ({ ...s, adSources: [...s.adSources, res] }));
@@ -84,6 +92,11 @@ export default function App() {
   const toggleAdSource = async (id: string, active: boolean) => {
     await updateItem('sources', { id, active });
     setState(s => ({ ...s, adSources: s.adSources.map(a => a.id === id ? { ...a, active } : a) }));
+  };
+
+  const removeAdSource = async (id: string) => {
+    await removeItem('sources', id);
+    setState(s => ({ ...s, adSources: s.adSources.filter(a => a.id !== id) }));
   };
 
   const addBranch = async (name: string) => {
@@ -96,6 +109,10 @@ export default function App() {
     setState(s => ({ ...s, users: [...s.users, res] }));
   };
 
+  const removeUser = (id: string) => {
+    setState(s => ({ ...s, users: s.users.filter(u => u.id !== id) }));
+  };
+
   const ctx: AppContext = {
     state,
     loading,
@@ -106,10 +123,13 @@ export default function App() {
     addEvent,
     addChannel,
     toggleChannel,
+    removeChannel,
     addAdSource,
     toggleAdSource,
+    removeAdSource,
     addBranch,
     addUser,
+    removeUser,
     reloadData: loadAll,
   };
 

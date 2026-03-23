@@ -1,7 +1,7 @@
 """
 Управление справочниками CRM: каналы, источники, филиалы, пользователи.
 Параметр entity в query: channels | sources | branches | users
-POST — добавить, PUT — обновить (active toggle)
+POST — добавить, PUT — обновить (active toggle), PATCH — удалить по id
 """
 import json
 import os
@@ -11,7 +11,7 @@ import psycopg2
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -38,6 +38,9 @@ def handler(event: dict, context) -> dict:
         elif method == 'PUT':
             cur.execute("UPDATE channels SET active = %s WHERE id = %s", (body['active'], body['id']))
             result = {'ok': True}
+        elif method == 'PATCH':
+            cur.execute("UPDATE channels SET active = FALSE WHERE id = %s", (body['id'],))
+            result = {'ok': True}
 
     elif entity == 'sources':
         if method == 'POST':
@@ -47,6 +50,9 @@ def handler(event: dict, context) -> dict:
             result = {'id': r[0], 'name': r[1], 'active': r[2]}
         elif method == 'PUT':
             cur.execute("UPDATE ad_sources SET active = %s WHERE id = %s", (body['active'], body['id']))
+            result = {'ok': True}
+        elif method == 'PATCH':
+            cur.execute("UPDATE ad_sources SET active = FALSE WHERE id = %s", (body['id'],))
             result = {'ok': True}
 
     elif entity == 'branches':
@@ -66,6 +72,9 @@ def handler(event: dict, context) -> dict:
             )
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'role': r[2], 'branchId': r[3]}
+        elif method == 'PATCH':
+            cur.execute("UPDATE users SET role = 'deleted' WHERE id = %s", (body['id'],))
+            result = {'ok': True}
 
     conn.commit()
     cur.close()

@@ -24,7 +24,7 @@ export default function UsersPage({ ctx }: Props) {
   const [branchId, setBranchId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { state, addUser } = ctx;
+  const { state, addUser, removeUser } = ctx;
   const { users, branches } = state;
 
   const getBranchName = (id?: string | null) => id ? branches.find(b => b.id === id)?.name || '—' : 'Все филиалы';
@@ -110,9 +110,18 @@ export default function UsersPage({ ctx }: Props) {
                 <div className="text-xs text-muted-foreground mt-0.5">{getBranchName(user.branchId)}</div>
               </div>
             </div>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${roleBadge[user.role]}`}>
-              {roleLabels[user.role]}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${roleBadge[user.role]}`}>
+                {roleLabels[user.role]}
+              </span>
+              <button
+                onClick={() => removeUser(user.id)}
+                className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+                title="Удалить"
+              >
+                <Icon name="Trash2" size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

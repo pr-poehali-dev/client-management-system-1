@@ -11,7 +11,7 @@ export default function SettingsPage({ ctx }: Props) {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { state, addChannel, toggleChannel, addAdSource, toggleAdSource, addBranch } = ctx;
+  const { state, addChannel, toggleChannel, removeChannel, addAdSource, toggleAdSource, removeAdSource, addBranch } = ctx;
   const { channels, adSources, branches } = state;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -44,9 +44,18 @@ export default function SettingsPage({ ctx }: Props) {
             </button>
             <span className={`text-sm font-medium ${!item.active ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{item.name}</span>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-secondary text-muted-foreground'}`}>
-            {item.active ? 'Активен' : 'Выключен'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-secondary text-muted-foreground'}`}>
+              {item.active ? 'Активен' : 'Выключен'}
+            </span>
+            <button
+              onClick={() => removeChannel(item.id)}
+              className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+              title="Удалить"
+            >
+              <Icon name="Trash2" size={14} />
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -66,9 +75,18 @@ export default function SettingsPage({ ctx }: Props) {
             </button>
             <span className={`text-sm font-medium ${!item.active ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{item.name}</span>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-secondary text-muted-foreground'}`}>
-            {item.active ? 'Активен' : 'Выключен'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-secondary text-muted-foreground'}`}>
+              {item.active ? 'Активен' : 'Выключен'}
+            </span>
+            <button
+              onClick={() => removeAdSource(item.id)}
+              className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+              title="Удалить"
+            >
+              <Icon name="Trash2" size={14} />
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -77,9 +95,11 @@ export default function SettingsPage({ ctx }: Props) {
   const renderBranches = () => (
     <div className="space-y-2">
       {branches.map(item => (
-        <div key={item.id} className="flex items-center px-4 py-3 bg-card border border-border rounded-lg">
-          <Icon name="Building2" size={16} className="text-muted-foreground mr-3" />
-          <span className="text-sm font-medium text-foreground">{item.name}</span>
+        <div key={item.id} className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-lg">
+          <div className="flex items-center gap-3">
+            <Icon name="Building2" size={16} className="text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">{item.name}</span>
+          </div>
         </div>
       ))}
     </div>
