@@ -1,7 +1,7 @@
 """
 Управление справочниками CRM: каналы, источники, филиалы, пользователи.
 Параметр entity в query: channels | sources | branches | users
-POST — добавить, PUT — обновить, PATCH — удалить/установить пароль по id
+POST — добавить, PUT — обновить/редактировать, PATCH — удалить/установить пароль по id, DELETE — удалить
 """
 import json
 import os
@@ -12,7 +12,7 @@ import psycopg2
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -29,6 +29,7 @@ def handler(event: dict, context) -> dict:
     params = event.get('queryStringParameters') or {}
     entity = params.get('entity', '')
     body = json.loads(event.get('body') or '{}')
+    action = params.get('action', '')
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
@@ -41,10 +42,13 @@ def handler(event: dict, context) -> dict:
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'active': r[2]}
         elif method == 'PUT':
-            cur.execute("UPDATE channels SET active = %s WHERE id = %s", (body['active'], body['id']))
+            if 'name' in body:
+                cur.execute("UPDATE channels SET name = %s WHERE id = %s", (body['name'], body['id']))
+            else:
+                cur.execute("UPDATE channels SET active = %s WHERE id = %s", (body['active'], body['id']))
             result = {'ok': True}
-        elif method == 'PATCH':
-            cur.execute("UPDATE channels SET active = FALSE WHERE id = %s", (body['id'],))
+        elif method == 'PATCH' or method == 'DELETE':
+            cur.execute("DELETE FROM channels WHERE id = %s", (body['id'],))
             result = {'ok': True}
 
     elif entity == 'sources':
@@ -54,10 +58,13 @@ def handler(event: dict, context) -> dict:
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'active': r[2]}
         elif method == 'PUT':
-            cur.execute("UPDATE ad_sources SET active = %s WHERE id = %s", (body['active'], body['id']))
+            if 'name' in body:
+                cur.execute("UPDATE ad_sources SET name = %s WHERE id = %s", (body['name'], body['id']))
+            else:
+                cur.execute("UPDATE ad_sources SET active = %s WHERE id = %s", (body['active'], body['id']))
             result = {'ok': True}
-        elif method == 'PATCH':
-            cur.execute("UPDATE ad_sources SET active = FALSE WHERE id = %s", (body['id'],))
+        elif method == 'PATCH' or method == 'DELETE':
+            cur.execute("DELETE FROM ad_sources WHERE id = %s", (body['id'],))
             result = {'ok': True}
 
     elif entity == 'branches':
@@ -66,6 +73,12 @@ def handler(event: dict, context) -> dict:
             cur.execute("INSERT INTO branches (id, name) VALUES (%s, %s) RETURNING id, name", (new_id, body['name']))
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1]}
+        elif method == 'PUT':
+            cur.execute("UPDATE branches SET name = %s WHERE id = %s", (body['name'], body['id']))
+            result = {'ok': True}
+        elif method == 'PATCH' or method == 'DELETE':
+            cur.execute("DELETE FROM branches WHERE id = %s", (body['id'],))
+            result = {'ok': True}
 
     elif entity == 'users':
         if method == 'POST':
@@ -80,12 +93,19 @@ def handler(event: dict, context) -> dict:
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'role': r[2], 'branchId': r[3]}
         elif method == 'PUT':
-            password = body.get('password') or ''
-            ph = hash_password(password) if password else None
-            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (ph, body['id']))
+            if action == 'password':
+                password = body.get('password') or ''
+                ph = hash_password(password) if password else None
+                cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (ph, body['id']))
+            else:
+                branch_id = body.get('branchId') or None
+                cur.execute(
+                    "UPDATE users SET name = %s, role = %s, branch_id = %s WHERE id = %s",
+                    (body['name'], body['role'], branch_id, body['id'])
+                )
             result = {'ok': True}
-        elif method == 'PATCH':
-            cur.execute("UPDATE users SET role = 'deleted' WHERE id = %s", (body['id'],))
+        elif method == 'PATCH' or method == 'DELETE':
+            cur.execute("DELETE FROM users WHERE id = %s", (body['id'],))
             result = {'ok': True}
 
     conn.commit()

@@ -27,8 +27,11 @@ export interface AppContext {
   toggleAdSource: (id: string, active: boolean) => Promise<void>;
   removeAdSource: (id: string) => Promise<void>;
   addBranch: (name: string) => Promise<void>;
+  updateBranch: (id: string, name: string) => Promise<void>;
+  removeBranch: (id: string) => Promise<void>;
   addUser: (user: Omit<User, 'id'> & { password?: string }) => Promise<void>;
-  removeUser: (id: string) => void;
+  updateUser: (user: Pick<User, 'id' | 'name' | 'role' | 'branchId'>) => Promise<void>;
+  removeUser: (id: string) => Promise<void>;
   updateUserPassword: (userId: string, password: string) => Promise<void>;
   reloadData: () => Promise<void>;
 }
@@ -109,12 +112,28 @@ export default function App() {
     setState(s => ({ ...s, branches: [...s.branches, res] }));
   };
 
+  const updateBranch = async (id: string, name: string) => {
+    await updateItem('branches', { id, name });
+    setState(s => ({ ...s, branches: s.branches.map(b => b.id === id ? { ...b, name } : b) }));
+  };
+
+  const removeBranch = async (id: string) => {
+    await removeItem('branches', id);
+    setState(s => ({ ...s, branches: s.branches.filter(b => b.id !== id) }));
+  };
+
   const addUser = async (user: Omit<User, 'id'> & { password?: string }) => {
     const res = await addItem('users', { name: user.name, role: user.role, branchId: user.branchId, password: user.password || '' });
     setState(s => ({ ...s, users: [...s.users, res] }));
   };
 
-  const removeUser = (id: string) => {
+  const updateUser = async (user: Pick<User, 'id' | 'name' | 'role' | 'branchId'>) => {
+    await updateItem('users', { id: user.id, name: user.name, role: user.role, branchId: user.branchId || null });
+    setState(s => ({ ...s, users: s.users.map(u => u.id === user.id ? { ...u, ...user } : u) }));
+  };
+
+  const removeUser = async (id: string) => {
+    await removeItem('users', id);
     setState(s => ({ ...s, users: s.users.filter(u => u.id !== id) }));
   };
 
@@ -137,7 +156,10 @@ export default function App() {
     toggleAdSource,
     removeAdSource,
     addBranch,
+    updateBranch,
+    removeBranch,
     addUser,
+    updateUser,
     removeUser,
     updateUserPassword,
     reloadData: loadAll,

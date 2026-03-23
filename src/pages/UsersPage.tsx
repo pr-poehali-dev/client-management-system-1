@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppContext } from '@/App';
-import { Role } from '@/types/crm';
+import { Role, User } from '@/types/crm';
 import Icon from '@/components/ui/icon';
 
 interface Props { ctx: AppContext; }
@@ -17,6 +17,8 @@ const roleBadge: Record<Role, string> = {
   director: 'bg-purple-50 text-purple-700',
 };
 
+type PanelType = 'password' | 'edit' | null;
+
 export default function UsersPage({ ctx }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -25,46 +27,71 @@ export default function UsersPage({ ctx }: Props) {
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [passwordUserId, setPasswordUserId] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<{ id: string; type: PanelType }>({ id: '', type: null });
+
   const [passwordValue, setPasswordValue] = useState('');
   const [passwordShow, setPasswordShow] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordDone, setPasswordDone] = useState<string | null>(null);
 
-  const { state, addUser, removeUser, updateUserPassword } = ctx;
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState<Role>('admin');
+  const [editBranchId, setEditBranchId] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+
+  const { state, addUser, updateUser, removeUser, updateUserPassword } = ctx;
   const { users, branches } = state;
 
   const getBranchName = (id?: string | null) => id ? branches.find(b => b.id === id)?.name || '—' : 'Все филиалы';
+
+  const openPanel = (userId: string, type: PanelType, user?: User) => {
+    if (activePanel.id === userId && activePanel.type === type) {
+      setActivePanel({ id: '', type: null });
+      return;
+    }
+    setActivePanel({ id: userId, type });
+    setPasswordValue('');
+    setPasswordShow(false);
+    if (type === 'edit' && user) {
+      setEditName(user.name);
+      setEditRole(user.role);
+      setEditBranchId(user.branchId || '');
+    }
+  };
 
   const handleAdd = async () => {
     if (!name.trim() || saving) return;
     if (role === 'admin' && !branchId) return;
     setSaving(true);
     await addUser({ name: name.trim(), role, branchId: role === 'admin' ? branchId : undefined, password: newPassword });
-    setName('');
-    setRole('admin');
-    setBranchId('');
-    setNewPassword('');
+    setName(''); setRole('admin'); setBranchId(''); setNewPassword('');
     setShowForm(false);
     setSaving(false);
   };
 
-  const openPasswordForm = (userId: string) => {
-    setPasswordUserId(userId);
-    setPasswordValue('');
-    setPasswordShow(false);
-    setPasswordDone(null);
-  };
-
   const handleSetPassword = async () => {
-    if (!passwordUserId || !passwordValue.trim() || passwordSaving) return;
+    if (!activePanel.id || !passwordValue.trim() || passwordSaving) return;
     setPasswordSaving(true);
-    await updateUserPassword(passwordUserId, passwordValue.trim());
-    setPasswordDone(passwordUserId);
-    setPasswordUserId(null);
+    await updateUserPassword(activePanel.id, passwordValue.trim());
+    setPasswordDone(activePanel.id);
+    setActivePanel({ id: '', type: null });
     setPasswordValue('');
     setPasswordSaving(false);
     setTimeout(() => setPasswordDone(null), 3000);
+  };
+
+  const handleEditSave = async () => {
+    if (!editName.trim() || editSaving) return;
+    if (editRole === 'admin' && !editBranchId) return;
+    setEditSaving(true);
+    await updateUser({
+      id: activePanel.id,
+      name: editName.trim(),
+      role: editRole,
+      branchId: editRole === 'admin' ? editBranchId : undefined,
+    });
+    setActivePanel({ id: '', type: null });
+    setEditSaving(false);
   };
 
   return (
@@ -75,7 +102,7 @@ export default function UsersPage({ ctx }: Props) {
           <p className="text-muted-foreground text-sm mt-1">Управление доступом и паролями</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setActivePanel({ id: '', type: null }); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/80 transition-all"
         >
           <Icon name={showForm ? 'X' : 'Plus'} size={16} />
@@ -112,15 +139,13 @@ export default function UsersPage({ ctx }: Props) {
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             )}
-            <div className="relative">
-              <input
-                type="text"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="Пароль для входа"
-                className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground"
-              />
-            </div>
+            <input
+              type="text"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Пароль для входа"
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground"
+            />
             <button
               onClick={handleAdd}
               disabled={!name.trim() || (role === 'admin' && !branchId) || saving}
@@ -150,9 +175,21 @@ export default function UsersPage({ ctx }: Props) {
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${roleBadge[user.role]}`}>
                   {roleLabels[user.role]}
                 </span>
+                {passwordDone === user.id && (
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    <Icon name="CheckCircle" size={12} /> Пароль задан
+                  </span>
+                )}
                 <button
-                  onClick={() => passwordUserId === user.id ? setPasswordUserId(null) : openPasswordForm(user.id)}
-                  className={`p-1.5 transition-colors rounded ${passwordUserId === user.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => openPanel(user.id, 'edit', user)}
+                  className={`p-1.5 rounded transition-colors ${activePanel.id === user.id && activePanel.type === 'edit' ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Редактировать"
+                >
+                  <Icon name="Pencil" size={14} />
+                </button>
+                <button
+                  onClick={() => openPanel(user.id, 'password')}
+                  className={`p-1.5 rounded transition-colors ${activePanel.id === user.id && activePanel.type === 'password' ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground'}`}
                   title="Установить пароль"
                 >
                   <Icon name="KeyRound" size={14} />
@@ -167,7 +204,58 @@ export default function UsersPage({ ctx }: Props) {
               </div>
             </div>
 
-            {passwordUserId === user.id && (
+            {activePanel.id === user.id && activePanel.type === 'edit' && (
+              <div className="px-4 pb-4 border-t border-border pt-3 animate-fade-in">
+                <p className="text-xs text-muted-foreground mb-2.5">Редактирование сотрудника</p>
+                <div className="space-y-2">
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Имя и фамилия"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground"
+                  />
+                  <select
+                    value={editRole}
+                    onChange={e => setEditRole(e.target.value as Role)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+                  >
+                    {(Object.keys(roleLabels) as Role[]).map(r => (
+                      <option key={r} value={r}>{roleLabels[r]}</option>
+                    ))}
+                  </select>
+                  {editRole === 'admin' && (
+                    <select
+                      value={editBranchId}
+                      onChange={e => setEditBranchId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+                    >
+                      <option value="">Выберите филиал</option>
+                      {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={handleEditSave}
+                      disabled={!editName.trim() || (editRole === 'admin' && !editBranchId) || editSaving}
+                      className="flex-1 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
+                    >
+                      {editSaving
+                        ? <span className="w-3.5 h-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                        : <Icon name="Check" size={14} />}
+                      Сохранить
+                    </button>
+                    <button
+                      onClick={() => setActivePanel({ id: '', type: null })}
+                      className="px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activePanel.id === user.id && activePanel.type === 'password' && (
               <div className="px-4 pb-4 border-t border-border pt-3 animate-fade-in">
                 <p className="text-xs text-muted-foreground mb-2.5">Установить новый пароль для входа</p>
                 <div className="flex gap-2">
@@ -199,15 +287,6 @@ export default function UsersPage({ ctx }: Props) {
                     Сохранить
                   </button>
                 </div>
-              </div>
-            )}
-
-            {passwordDone === user.id && (
-              <div className="px-4 pb-3 border-t border-border pt-2.5 animate-fade-in">
-                <p className="text-xs text-green-600 flex items-center gap-1.5">
-                  <Icon name="CheckCircle" size={12} />
-                  Пароль успешно обновлён
-                </p>
               </div>
             )}
           </div>
