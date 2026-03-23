@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AppContext } from '@/App';
 import { EventType } from '@/types/crm';
 import Icon from '@/components/ui/icon';
@@ -12,19 +12,33 @@ const typeConfig = {
   sale: { label: 'Продажа', icon: 'TrendingUp', color: 'text-emerald-600', bg: 'bg-emerald-50' },
 };
 
+type Period = 'today' | 'week' | 'month' | 'all';
+const periodLabels: Record<Period, string> = { today: 'Сегодня', week: 'Неделя', month: 'Месяц', all: 'Всё время' };
+
+function filterByPeriod<T extends { createdAt: string }>(events: T[], period: Period): T[] {
+  if (period === 'all') return events;
+  const now = new Date();
+  const start = new Date();
+  if (period === 'today') { start.setHours(0, 0, 0, 0); }
+  else if (period === 'week') { start.setDate(now.getDate() - 6); start.setHours(0, 0, 0, 0); }
+  else if (period === 'month') { start.setDate(1); start.setHours(0, 0, 0, 0); }
+  return events.filter(e => new Date(e.createdAt) >= start);
+}
+
 export default function Dashboard({ ctx }: Props) {
   const [modal, setModal] = useState<EventType | null>(null);
+  const [period, setPeriod] = useState<Period>('month');
   const { state } = ctx;
   const { currentUser, events, branches, channels, adSources } = state;
 
   const isDirector = currentUser?.role === 'director';
   const isAdmin = currentUser?.role === 'admin';
 
-  const myEvents = isDirector
-    ? events
-    : isAdmin
-      ? events.filter(e => e.branchId === currentUser?.branchId)
-      : events;
+  const scopedEvents = isAdmin
+    ? events.filter(e => e.branchId === currentUser?.branchId)
+    : events;
+
+  const myEvents = useMemo(() => filterByPeriod(scopedEvents, period), [scopedEvents, period]);
 
   const counts = {
     inquiry: myEvents.filter(e => e.type === 'inquiry').length,
@@ -32,7 +46,7 @@ export default function Dashboard({ ctx }: Props) {
     sale: myEvents.filter(e => e.type === 'sale').length,
   };
 
-  const recent = myEvents.slice(0, 5);
+  const recent = scopedEvents.slice(0, 5);
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
     arr.find(x => x.id === id)?.name || '—';
@@ -40,16 +54,29 @@ export default function Dashboard({ ctx }: Props) {
   const getEventLabel = (type: EventType) => typeConfig[type].label;
 
   const today = new Date().toDateString();
-  const todayEvents = myEvents.filter(e => new Date(e.createdAt).toDateString() === today);
+  const todayEvents = scopedEvents.filter(e => new Date(e.createdAt).toDateString() === today);
 
   return (
     <div className="p-8 max-w-5xl animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Дашборд</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {isDirector ? 'Вся сеть' : isAdmin ? getName(currentUser?.branchId || '', branches) : 'Все филиалы'}
-          {' · '}Сегодня: <span className="stat-number font-medium text-foreground">{todayEvents.length}</span> событий
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Дашборд</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {isDirector ? 'Вся сеть' : isAdmin ? getName(currentUser?.branchId || '', branches) : 'Все филиалы'}
+            {' · '}Сегодня: <span className="stat-number font-medium text-foreground">{todayEvents.length}</span> событий
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+          {(Object.keys(periodLabels) as Period[]).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {periodLabels[p]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
@@ -64,7 +91,7 @@ export default function Dashboard({ ctx }: Props) {
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{cfg.label}</span>
               </div>
               <div className="stat-number text-3xl font-medium text-foreground">{counts[type]}</div>
-              <div className="text-xs text-muted-foreground mt-1">всего записей</div>
+              <div className="text-xs text-muted-foreground mt-1">{periodLabels[period].toLowerCase()}</div>
             </div>
           );
         })}
