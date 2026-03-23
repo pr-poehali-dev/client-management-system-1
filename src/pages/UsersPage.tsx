@@ -68,10 +68,10 @@ export default function UsersPage({ ctx }: Props) {
   };
 
   return (
-    <div className="p-8 max-w-2xl animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8 max-w-2xl animate-fade-in">
+      <div className="flex items-center justify-between mb-6 md:mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Сотрудники</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Сотрудники</h1>
           <p className="text-muted-foreground text-sm mt-1">Управление доступом и паролями</p>
         </div>
         <button

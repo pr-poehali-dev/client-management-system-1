@@ -40,7 +40,8 @@ export default function Layout({ ctx, children }: Props) {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="w-56 shrink-0 border-r border-border bg-card flex flex-col">
+      {/* Боковая панель — только десктоп */}
+      <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-card flex-col">
         <div className="px-5 py-5 border-b border-border">
           <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase mb-1">CRM Система</div>
           <div className="font-semibold text-sm text-foreground leading-tight">{currentUser.name}</div>
@@ -77,9 +78,48 @@ export default function Layout({ ctx, children }: Props) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto scrollbar-thin">
-        {children}
-      </main>
+      {/* Основной контент */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Шапка — только мобил */}
+        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border sticky top-0 z-40">
+          <div>
+            <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase leading-none">CRM</div>
+            <div className="font-semibold text-sm text-foreground leading-tight">{currentUser.name}</div>
+          </div>
+          <button
+            onClick={ctx.logout}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md"
+          >
+            <Icon name="LogOut" size={18} />
+          </button>
+        </header>
+
+        <main className="flex-1 overflow-auto scrollbar-thin pb-20 md:pb-0">
+          {children}
+        </main>
+
+        {/* Нижняя навигация — только мобил */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 flex">
+          {visibleNav.map(item => (
+            <button
+              key={item.id}
+              onClick={() => ctx.setPage(item.id)}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-all duration-150 ${
+                ctx.currentPage === item.id
+                  ? 'text-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <Icon
+                name={item.icon}
+                size={20}
+                className={ctx.currentPage === item.id ? 'text-foreground' : 'text-muted-foreground'}
+              />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
     </div>
   );
 }

@@ -113,18 +113,18 @@ export default function SettingsPage({ ctx }: Props) {
   );
 
   return (
-    <div className="p-8 max-w-2xl animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Справочники</h1>
+    <div className="p-4 md:p-8 max-w-2xl animate-fade-in">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Справочники</h1>
         <p className="text-muted-foreground text-sm mt-1">Управление списками каналов, источников и филиалов</p>
       </div>
 
-      <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 mb-6 w-fit">
+      <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 mb-5 md:mb-6 w-full md:w-fit overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => { setTab(t.id); setNewName(''); }}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${tab === t.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${tab === t.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {t.label}
           </button>

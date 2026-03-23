@@ -21,7 +21,6 @@ export default function EventsPage({ ctx }: Props) {
   const { currentUser, events, branches, channels, adSources, users } = state;
 
   const isAdmin = currentUser?.role === 'admin';
-  const isManager = currentUser?.role === 'manager';
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
     arr.find(x => x.id === id)?.name || '—';
@@ -34,28 +33,30 @@ export default function EventsPage({ ctx }: Props) {
   if (filterBranch !== 'all') filtered = filtered.filter(e => e.branchId === filterBranch);
 
   return (
-    <div className="p-8 max-w-5xl animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8 max-w-5xl animate-fade-in">
+      {/* Заголовок */}
+      <div className="flex items-center justify-between mb-6 md:mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">События</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">События</h1>
           <p className="text-muted-foreground text-sm mt-1">История всех обращений, записей и продаж</p>
         </div>
         <button
           onClick={() => setModal('inquiry')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/80 transition-all"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/80 transition-all"
         >
           <Icon name="Plus" size={16} />
-          Добавить
+          <span className="hidden md:inline">Добавить</span>
         </button>
       </div>
 
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
+      {/* Фильтры */}
+      <div className="flex flex-col gap-2 md:flex-row md:gap-3 mb-5 md:mb-6">
+        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 overflow-x-auto">
           {(['all', 'inquiry', 'appointment', 'sale'] as const).map(t => (
             <button
               key={t}
               onClick={() => setFilterType(t)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 filterType === t ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -76,7 +77,56 @@ export default function EventsPage({ ctx }: Props) {
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Мобил — карточки */}
+      <div className="md:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="bg-card border border-border rounded-xl px-5 py-12 text-center text-muted-foreground text-sm">
+            <Icon name="Inbox" size={32} className="mx-auto mb-3 opacity-30" />
+            Событий не найдено
+          </div>
+        ) : (
+          filtered.map(event => {
+            const cfg = typeConfig[event.type];
+            return (
+              <div key={event.id} className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className={`inline-flex text-xs font-medium px-2 py-1 rounded-md ${cfg.bg} ${cfg.color}`}>
+                    {cfg.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {new Date(event.createdAt).toLocaleDateString('ru', { day: '2-digit', month: '2-digit' })}
+                    {' '}
+                    {new Date(event.createdAt).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  {!isAdmin && (
+                    <div className="flex justify-between">
+                      <span>Филиал</span>
+                      <span className="text-foreground font-medium">{getName(event.branchId, branches)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Сотрудник</span>
+                    <span className="text-foreground font-medium">{getName(event.userId, users)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Канал</span>
+                    <span className="text-foreground font-medium">{getName(event.channelId, channels)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Источник</span>
+                    <span className="text-foreground font-medium">{getName(event.adSourceId, adSources)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Десктоп — таблица */}
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
         {filtered.length === 0 ? (
           <div className="px-5 py-12 text-center text-muted-foreground text-sm">
             <Icon name="Inbox" size={32} className="mx-auto mb-3 opacity-30" />
