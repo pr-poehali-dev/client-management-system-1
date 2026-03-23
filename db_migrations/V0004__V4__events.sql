@@ -1,0 +1,1 @@
+CREATE TABLE events (id TEXT PRIMARY KEY, type TEXT NOT NULL, branch_id TEXT NOT NULL, user_id TEXT NOT NULL, channel_id TEXT NOT NULL, ad_source_id TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW())

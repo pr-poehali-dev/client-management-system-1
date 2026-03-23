@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppState, User, CRMEvent, Branch, Channel, AdSource } from '@/types/crm';
 import { initialState } from '@/data/initial';
+import { fetchData, fetchEvents, createEvent, addItem, updateItem } from '@/api/client';
 import LoginPage from '@/pages/LoginPage';
 import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -13,20 +14,41 @@ export type PageType = 'dashboard' | 'events' | 'analytics' | 'settings' | 'user
 
 export interface AppContext {
   state: AppState;
+  loading: boolean;
   currentPage: PageType;
   setPage: (page: PageType) => void;
   login: (user: User) => void;
   logout: () => void;
-  addEvent: (event: Omit<CRMEvent, 'id' | 'createdAt'>) => void;
-  updateBranches: (branches: Branch[]) => void;
-  updateChannels: (channels: Channel[]) => void;
-  updateAdSources: (adSources: AdSource[]) => void;
-  updateUsers: (users: User[]) => void;
+  addEvent: (event: Omit<CRMEvent, 'id' | 'createdAt'>) => Promise<void>;
+  addChannel: (name: string) => Promise<void>;
+  toggleChannel: (id: string, active: boolean) => Promise<void>;
+  addAdSource: (name: string) => Promise<void>;
+  toggleAdSource: (id: string, active: boolean) => Promise<void>;
+  addBranch: (name: string) => Promise<void>;
+  addUser: (user: Omit<User, 'id'>) => Promise<void>;
+  reloadData: () => Promise<void>;
 }
 
 export default function App() {
   const [state, setState] = useState<AppState>(initialState);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+
+  const loadAll = async () => {
+    setLoading(true);
+    const [dataRes, eventsRes] = await Promise.all([fetchData(), fetchEvents()]);
+    setState(s => ({
+      ...s,
+      branches: dataRes.branches || [],
+      users: dataRes.users || [],
+      channels: dataRes.channels || [],
+      adSources: dataRes.adSources || [],
+      events: eventsRes.events || [],
+    }));
+    setLoading(false);
+  };
+
+  useEffect(() => { loadAll(); }, []);
 
   const login = (user: User) => {
     setState(s => ({ ...s, currentUser: user }));
@@ -38,32 +60,69 @@ export default function App() {
     setCurrentPage('dashboard');
   };
 
-  const addEvent = (event: Omit<CRMEvent, 'id' | 'createdAt'>) => {
-    const newEvent: CRMEvent = {
-      ...event,
-      id: `e${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
+  const addEvent = async (event: Omit<CRMEvent, 'id' | 'createdAt'>) => {
+    const res = await createEvent(event);
+    const newEvent: CRMEvent = { ...event, id: res.id, createdAt: res.createdAt };
     setState(s => ({ ...s, events: [newEvent, ...s.events] }));
   };
 
-  const updateBranches = (branches: Branch[]) => setState(s => ({ ...s, branches }));
-  const updateChannels = (channels: Channel[]) => setState(s => ({ ...s, channels }));
-  const updateAdSources = (adSources: AdSource[]) => setState(s => ({ ...s, adSources }));
-  const updateUsers = (users: User[]) => setState(s => ({ ...s, users }));
+  const addChannel = async (name: string) => {
+    const res = await addItem('channels', { name });
+    setState(s => ({ ...s, channels: [...s.channels, res] }));
+  };
+
+  const toggleChannel = async (id: string, active: boolean) => {
+    await updateItem('channels', { id, active });
+    setState(s => ({ ...s, channels: s.channels.map(c => c.id === id ? { ...c, active } : c) }));
+  };
+
+  const addAdSource = async (name: string) => {
+    const res = await addItem('sources', { name });
+    setState(s => ({ ...s, adSources: [...s.adSources, res] }));
+  };
+
+  const toggleAdSource = async (id: string, active: boolean) => {
+    await updateItem('sources', { id, active });
+    setState(s => ({ ...s, adSources: s.adSources.map(a => a.id === id ? { ...a, active } : a) }));
+  };
+
+  const addBranch = async (name: string) => {
+    const res = await addItem('branches', { name });
+    setState(s => ({ ...s, branches: [...s.branches, res] }));
+  };
+
+  const addUser = async (user: Omit<User, 'id'>) => {
+    const res = await addItem('users', { name: user.name, role: user.role, branchId: user.branchId });
+    setState(s => ({ ...s, users: [...s.users, res] }));
+  };
 
   const ctx: AppContext = {
     state,
+    loading,
     currentPage,
     setPage: setCurrentPage,
     login,
     logout,
     addEvent,
-    updateBranches,
-    updateChannels,
-    updateAdSources,
-    updateUsers,
+    addChannel,
+    toggleChannel,
+    addAdSource,
+    toggleAdSource,
+    addBranch,
+    addUser,
+    reloadData: loadAll,
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-6 h-6 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Загрузка данных...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!state.currentUser) {
     return <LoginPage ctx={ctx} />;

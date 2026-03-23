@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Add channel",
+      "method": "POST",
+      "path": "/?entity=channels",
+      "body": {"name": "Тест-канал"},
+      "expectedStatus": 200,
+      "expectedBody": {"name": "Тест-канал"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

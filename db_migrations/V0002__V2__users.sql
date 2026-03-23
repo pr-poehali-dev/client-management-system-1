@@ -1,0 +1,1 @@
+CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL, branch_id TEXT, created_at TIMESTAMPTZ DEFAULT NOW())

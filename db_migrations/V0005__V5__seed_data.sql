@@ -1,0 +1,4 @@
+INSERT INTO branches (id, name) VALUES ('b1','Филиал Центр'),('b2','Филиал Север'),('b3','Филиал Юг'),('b4','Филиал Запад');
+INSERT INTO users (id, name, role, branch_id) VALUES ('u1','Анна Смирнова','admin','b1'),('u2','Дмитрий Козлов','admin','b2'),('u3','Елена Попова','admin','b3'),('u4','Игорь Новиков','admin','b4'),('u5','Сергей Петров','manager',NULL),('u6','Мария Иванова','director',NULL);
+INSERT INTO channels (id, name) VALUES ('ch1','Телефон'),('ch2','WhatsApp'),('ch3','Instagram'),('ch4','Сайт'),('ch5','Лично');
+INSERT INTO ad_sources (id, name) VALUES ('as1','Яндекс'),('as2','Google'),('as3','Instagram'),('as4','ВКонтакте'),('as5','Рекомендация'),('as6','Наружная реклама')

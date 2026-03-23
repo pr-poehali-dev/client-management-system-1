@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppContext } from '@/App';
-import { User, Role } from '@/types/crm';
+import { Role } from '@/types/crm';
 import Icon from '@/components/ui/icon';
 
 interface Props { ctx: AppContext; }
@@ -22,28 +22,24 @@ export default function UsersPage({ ctx }: Props) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role>('admin');
   const [branchId, setBranchId] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const { state, updateUsers } = ctx;
+  const { state, addUser } = ctx;
   const { users, branches } = state;
 
-  const getName = (id: string) => branches.find(b => b.id === id)?.name || '—';
+  const getBranchName = (id?: string | null) => id ? branches.find(b => b.id === id)?.name || '—' : 'Все филиалы';
 
-  const handleAdd = () => {
-    if (!name.trim()) return;
-    const newUser: User = {
-      id: `u${Date.now()}`,
-      name: name.trim(),
-      role,
-      branchId: role === 'admin' ? branchId : undefined,
-    };
-    updateUsers([...users, newUser]);
+  const handleAdd = async () => {
+    if (!name.trim() || saving) return;
+    if (role === 'admin' && !branchId) return;
+    setSaving(true);
+    await addUser({ name: name.trim(), role, branchId: role === 'admin' ? branchId : undefined });
     setName('');
     setRole('admin');
     setBranchId('');
     setShowForm(false);
+    setSaving(false);
   };
-
-  const removeUser = (id: string) => updateUsers(users.filter(u => u.id !== id));
 
   return (
     <div className="p-8 max-w-2xl animate-fade-in">
@@ -92,10 +88,11 @@ export default function UsersPage({ ctx }: Props) {
             )}
             <button
               onClick={handleAdd}
-              disabled={!name.trim() || (role === 'admin' && !branchId)}
-              className="w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              disabled={!name.trim() || (role === 'admin' && !branchId) || saving}
+              className="w-full py-2.5 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
-              Добавить сотрудника
+              {saving && <span className="w-3.5 h-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />}
+              {saving ? 'Сохранение...' : 'Добавить сотрудника'}
             </button>
           </div>
         </div>
@@ -106,26 +103,16 @@ export default function UsersPage({ ctx }: Props) {
           <div key={user.id} className="flex items-center justify-between px-4 py-3.5 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground">
-                {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                {user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
               </div>
               <div>
                 <div className="text-sm font-medium text-foreground">{user.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {user.branchId ? getName(user.branchId) : 'Все филиалы'}
-                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">{getBranchName(user.branchId)}</div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${roleBadge[user.role]}`}>
-                {roleLabels[user.role]}
-              </span>
-              <button
-                onClick={() => removeUser(user.id)}
-                className="text-muted-foreground hover:text-destructive transition-colors p-1"
-              >
-                <Icon name="Trash2" size={15} />
-              </button>
-            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${roleBadge[user.role]}`}>
+              {roleLabels[user.role]}
+            </span>
           </div>
         ))}
       </div>

@@ -23,6 +23,7 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
   const [channelId, setChannelId] = useState('');
   const [adSourceId, setAdSourceId] = useState('');
   const [branchId, setBranchId] = useState(currentUser?.branchId || '');
+  const [saving, setSaving] = useState(false);
 
   const activeChannels = channels.filter(c => c.active);
   const activeAdSources = adSources.filter(a => a.active);
@@ -30,9 +31,11 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
 
   const canSubmit = channelId && adSourceId && branchId;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!currentUser || !canSubmit) return;
-    addEvent({ type, branchId, userId: currentUser.id, channelId, adSourceId });
+    setSaving(true);
+    await addEvent({ type, branchId, userId: currentUser.id, channelId, adSourceId });
+    setSaving(false);
     onClose();
   };
 
@@ -121,10 +124,11 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="flex-1 py-2.5 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            disabled={!canSubmit || saving}
+            className="flex-1 py-2.5 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
-            Зафиксировать
+            {saving && <span className="w-3.5 h-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />}
+            {saving ? 'Сохранение...' : 'Зафиксировать'}
           </button>
         </div>
       </div>
