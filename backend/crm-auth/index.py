@@ -24,15 +24,14 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     body = json.loads(event.get('body') or '{}')
-    user_id = body.get('userId', '')
+    user_id = body.get('userId', '').replace("'", "''")
     password = body.get('password', '')
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT id, name, role, branch_id, password_hash FROM users WHERE id = %s AND role != 'deleted'",
-        (user_id,)
+        f"SELECT id, name, role, branch_id, password_hash FROM users WHERE id = '{user_id}' AND role != 'deleted'"
     )
     row = cur.fetchone()
     cur.close()

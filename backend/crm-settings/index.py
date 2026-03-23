@@ -21,6 +21,12 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 
+def esc(val):
+    if val is None:
+        return 'NULL'
+    return "'" + str(val).replace("'", "''") + "'"
+
+
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
@@ -38,46 +44,46 @@ def handler(event: dict, context) -> dict:
     if entity == 'channels':
         if method == 'POST':
             new_id = str(uuid.uuid4())
-            cur.execute("INSERT INTO channels (id, name, active) VALUES (%s, %s, TRUE) RETURNING id, name, active", (new_id, body['name']))
+            cur.execute(f"INSERT INTO channels (id, name, active) VALUES ({esc(new_id)}, {esc(body['name'])}, TRUE) RETURNING id, name, active")
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'active': r[2]}
         elif method == 'PUT':
             if 'name' in body:
-                cur.execute("UPDATE channels SET name = %s WHERE id = %s", (body['name'], body['id']))
+                cur.execute(f"UPDATE channels SET name = {esc(body['name'])} WHERE id = {esc(body['id'])}")
             else:
-                cur.execute("UPDATE channels SET active = %s WHERE id = %s", (body['active'], body['id']))
+                cur.execute(f"UPDATE channels SET active = {str(body['active']).upper()} WHERE id = {esc(body['id'])}")
             result = {'ok': True}
         elif method == 'PATCH' or method == 'DELETE':
-            cur.execute("DELETE FROM channels WHERE id = %s", (body['id'],))
+            cur.execute(f"DELETE FROM channels WHERE id = {esc(body['id'])}")
             result = {'ok': True}
 
     elif entity == 'sources':
         if method == 'POST':
             new_id = str(uuid.uuid4())
-            cur.execute("INSERT INTO ad_sources (id, name, active) VALUES (%s, %s, TRUE) RETURNING id, name, active", (new_id, body['name']))
+            cur.execute(f"INSERT INTO ad_sources (id, name, active) VALUES ({esc(new_id)}, {esc(body['name'])}, TRUE) RETURNING id, name, active")
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'active': r[2]}
         elif method == 'PUT':
             if 'name' in body:
-                cur.execute("UPDATE ad_sources SET name = %s WHERE id = %s", (body['name'], body['id']))
+                cur.execute(f"UPDATE ad_sources SET name = {esc(body['name'])} WHERE id = {esc(body['id'])}")
             else:
-                cur.execute("UPDATE ad_sources SET active = %s WHERE id = %s", (body['active'], body['id']))
+                cur.execute(f"UPDATE ad_sources SET active = {str(body['active']).upper()} WHERE id = {esc(body['id'])}")
             result = {'ok': True}
         elif method == 'PATCH' or method == 'DELETE':
-            cur.execute("DELETE FROM ad_sources WHERE id = %s", (body['id'],))
+            cur.execute(f"DELETE FROM ad_sources WHERE id = {esc(body['id'])}")
             result = {'ok': True}
 
     elif entity == 'branches':
         if method == 'POST':
             new_id = str(uuid.uuid4())
-            cur.execute("INSERT INTO branches (id, name) VALUES (%s, %s) RETURNING id, name", (new_id, body['name']))
+            cur.execute(f"INSERT INTO branches (id, name) VALUES ({esc(new_id)}, {esc(body['name'])}) RETURNING id, name")
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1]}
         elif method == 'PUT':
-            cur.execute("UPDATE branches SET name = %s WHERE id = %s", (body['name'], body['id']))
+            cur.execute(f"UPDATE branches SET name = {esc(body['name'])} WHERE id = {esc(body['id'])}")
             result = {'ok': True}
         elif method == 'PATCH' or method == 'DELETE':
-            cur.execute("DELETE FROM branches WHERE id = %s", (body['id'],))
+            cur.execute(f"DELETE FROM branches WHERE id = {esc(body['id'])}")
             result = {'ok': True}
 
     elif entity == 'users':
@@ -87,8 +93,7 @@ def handler(event: dict, context) -> dict:
             password = body.get('password') or ''
             ph = hash_password(password) if password else None
             cur.execute(
-                "INSERT INTO users (id, name, role, branch_id, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING id, name, role, branch_id",
-                (new_id, body['name'], body['role'], branch_id, ph)
+                f"INSERT INTO users (id, name, role, branch_id, password_hash) VALUES ({esc(new_id)}, {esc(body['name'])}, {esc(body['role'])}, {esc(branch_id)}, {esc(ph)}) RETURNING id, name, role, branch_id"
             )
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1], 'role': r[2], 'branchId': r[3]}
@@ -96,16 +101,15 @@ def handler(event: dict, context) -> dict:
             if action == 'password':
                 password = body.get('password') or ''
                 ph = hash_password(password) if password else None
-                cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (ph, body['id']))
+                cur.execute(f"UPDATE users SET password_hash = {esc(ph)} WHERE id = {esc(body['id'])}")
             else:
                 branch_id = body.get('branchId') or None
                 cur.execute(
-                    "UPDATE users SET name = %s, role = %s, branch_id = %s WHERE id = %s",
-                    (body['name'], body['role'], branch_id, body['id'])
+                    f"UPDATE users SET name = {esc(body['name'])}, role = {esc(body['role'])}, branch_id = {esc(branch_id)} WHERE id = {esc(body['id'])}"
                 )
             result = {'ok': True}
         elif method == 'PATCH' or method == 'DELETE':
-            cur.execute("DELETE FROM users WHERE id = %s", (body['id'],))
+            cur.execute(f"DELETE FROM users WHERE id = {esc(body['id'])}")
             result = {'ok': True}
 
     conn.commit()
