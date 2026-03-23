@@ -48,6 +48,13 @@ def handler(event: dict, context) -> dict:
     uid, name, role, branch_id, password_hash = row
 
     if password_hash is None:
+        if role == 'director':
+            user = {'id': uid, 'name': name, 'role': role, 'branchId': branch_id}
+            return {
+                'statusCode': 200,
+                'headers': {**CORS, 'Content-Type': 'application/json'},
+                'body': json.dumps({'ok': True, 'user': user}, ensure_ascii=False),
+            }
         return {
             'statusCode': 200,
             'headers': {**CORS, 'Content-Type': 'application/json'},
