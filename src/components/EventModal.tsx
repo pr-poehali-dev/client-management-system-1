@@ -80,6 +80,7 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
                 className="w-full px-3 py-2.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
               >
                 <option value="">Выберите филиал</option>
+                <option value="unknown">Неизвестный</option>
                 {branches.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}

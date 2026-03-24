@@ -60,7 +60,7 @@ export default function AnalyticsPage({ ctx }: Props) {
   const { events, branches, channels, adSources, users } = state;
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
-    arr.find(x => x.id === id)?.name || '—';
+    id === 'unknown' ? 'Неизвестный' : arr.find(x => x.id === id)?.name || '—';
 
   const filtered = useMemo(() => {
     let result = [...events];

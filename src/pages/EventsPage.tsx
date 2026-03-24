@@ -174,7 +174,7 @@ export default function EventsPage({ ctx }: Props) {
   const isManager = currentUser?.role === 'manager';
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
-    arr.find(x => x.id === id)?.name || '—';
+    id === 'unknown' ? 'Неизвестный' : arr.find(x => x.id === id)?.name || '—';
 
   let filtered = isAdmin
     ? events.filter(e => e.branchId === currentUser?.branchId)

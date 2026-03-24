@@ -217,7 +217,7 @@ export default function Dashboard({ ctx }: Props) {
   const recent = (isDirector ? directorFiltered : scopedEvents).slice(0, 5);
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
-    arr.find(x => x.id === id)?.name || '—';
+    id === 'unknown' ? 'Неизвестный' : arr.find(x => x.id === id)?.name || '—';
 
   const getEventLabel = (type: EventType) => typeConfig[type].label;
 
