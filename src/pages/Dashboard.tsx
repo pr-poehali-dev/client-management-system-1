@@ -49,6 +49,9 @@ export default function Dashboard({ ctx }: Props) {
     sale: myEvents.filter(e => e.type === 'sale').length,
   };
 
+  const conv1 = counts.inquiry > 0 ? Math.round((counts.appointment / counts.inquiry) * 100) : null;
+  const conv2 = counts.appointment > 0 ? Math.round((counts.sale / counts.appointment) * 100) : null;
+
   const recent = scopedEvents.slice(0, 5);
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
@@ -86,7 +89,7 @@ export default function Dashboard({ ctx }: Props) {
       </div>
 
       {/* Карточки статистики */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-5">
         {(Object.keys(typeConfig) as EventType[]).map(type => {
           const cfg = typeConfig[type];
           return (
@@ -102,6 +105,32 @@ export default function Dashboard({ ctx }: Props) {
             </div>
           );
         })}
+      </div>
+
+      {/* Конверсия */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-5 flex items-center gap-3 md:gap-4">
+          <div className="p-1.5 md:p-2 rounded-lg bg-violet-50 shrink-0">
+            <Icon name="ArrowRight" size={16} className="text-violet-600" />
+          </div>
+          <div>
+            <div className="stat-number text-2xl md:text-3xl font-medium text-foreground">
+              {conv1 !== null ? `${conv1}%` : '—'}
+            </div>
+            <div className="text-[10px] md:text-xs text-muted-foreground mt-0.5">Обращение → Запись</div>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 md:p-5 flex items-center gap-3 md:gap-4">
+          <div className="p-1.5 md:p-2 rounded-lg bg-emerald-50 shrink-0">
+            <Icon name="ArrowRight" size={16} className="text-emerald-600" />
+          </div>
+          <div>
+            <div className="stat-number text-2xl md:text-3xl font-medium text-foreground">
+              {conv2 !== null ? `${conv2}%` : '—'}
+            </div>
+            <div className="text-[10px] md:text-xs text-muted-foreground mt-0.5">Запись → Продажа</div>
+          </div>
+        </div>
       </div>
 
       {/* Быстрые действия (не директор) */}
