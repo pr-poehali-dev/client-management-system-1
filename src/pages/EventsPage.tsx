@@ -171,12 +171,15 @@ export default function EventsPage({ ctx }: Props) {
   const { currentUser, events, branches, channels, adSources, users } = state;
 
   const isAdmin = currentUser?.role === 'admin';
+  const isManager = currentUser?.role === 'manager';
 
   const getName = (id: string, arr: { id: string; name: string }[]) =>
     arr.find(x => x.id === id)?.name || '—';
 
   let filtered = isAdmin
     ? events.filter(e => e.branchId === currentUser?.branchId)
+    : isManager
+    ? events.filter(e => e.userId === currentUser?.id)
     : events;
 
   if (filterType !== 'all') filtered = filtered.filter(e => e.type === filterType);

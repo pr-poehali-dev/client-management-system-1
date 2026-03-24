@@ -33,9 +33,12 @@ export default function Dashboard({ ctx }: Props) {
 
   const isDirector = currentUser?.role === 'director';
   const isAdmin = currentUser?.role === 'admin';
+  const isManager = currentUser?.role === 'manager';
 
   const scopedEvents = isAdmin
     ? events.filter(e => e.branchId === currentUser?.branchId)
+    : isManager
+    ? events.filter(e => e.userId === currentUser?.id)
     : events;
 
   const myEvents = useMemo(() => filterByPeriod(scopedEvents, period), [scopedEvents, period]);
@@ -63,7 +66,7 @@ export default function Dashboard({ ctx }: Props) {
         <div>
           <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">Дашборд</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {isDirector ? 'Вся сеть' : isAdmin ? getName(currentUser?.branchId || '', branches) : 'Все филиалы'}
+            {isDirector ? 'Вся сеть' : isAdmin ? getName(currentUser?.branchId || '', branches) : isManager ? 'Мои события' : 'Все филиалы'}
             {' · '}Сегодня: <span className="stat-number font-medium text-foreground">{todayEvents.length}</span> событий
           </p>
         </div>
