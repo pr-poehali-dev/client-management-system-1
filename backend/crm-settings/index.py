@@ -66,6 +66,9 @@ def handler(event: dict, context) -> dict:
             cur.execute("INSERT INTO branches (id, name) VALUES (%s, %s) RETURNING id, name", (new_id, body['name']))
             r = cur.fetchone()
             result = {'id': r[0], 'name': r[1]}
+        elif method == 'PATCH':
+            cur.execute("DELETE FROM branches WHERE id = %s", (body['id'],))
+            result = {'ok': True}
 
     elif entity == 'users':
         if method == 'POST':
