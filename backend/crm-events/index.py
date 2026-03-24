@@ -2,6 +2,8 @@
 Получение и создание событий CRM (обращения, записи, продажи).
 GET — список событий (фильтры: branch_id, user_id, type)
 POST — создание нового события
+PUT — редактирование события
+DELETE — удаление события
 """
 import json
 import os
@@ -11,7 +13,7 @@ import psycopg2
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -22,6 +24,34 @@ def handler(event: dict, context) -> dict:
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
+
+    if event.get('httpMethod') == 'PUT':
+        body = json.loads(event.get('body') or '{}')
+        event_id = body['id']
+        cur.execute(
+            "UPDATE events SET type=%s, branch_id=%s, channel_id=%s, ad_source_id=%s WHERE id=%s",
+            (body['type'], body['branchId'], body.get('channelId', ''), body.get('adSourceId', ''), event_id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {
+            'statusCode': 200,
+            'headers': {**CORS, 'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True}, ensure_ascii=False),
+        }
+
+    if event.get('httpMethod') == 'DELETE':
+        body = json.loads(event.get('body') or '{}')
+        cur.execute("DELETE FROM events WHERE id=%s", (body['id'],))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {
+            'statusCode': 200,
+            'headers': {**CORS, 'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True}, ensure_ascii=False),
+        }
 
     if event.get('httpMethod') == 'POST':
         body = json.loads(event.get('body') or '{}')

@@ -29,7 +29,8 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
   const activeAdSources = adSources.filter(a => a.active);
   const isManager = currentUser?.role === 'manager';
 
-  const canSubmit = channelId && adSourceId && branchId;
+  const needsChannel = type === 'inquiry';
+  const canSubmit = adSourceId && branchId && (!needsChannel || channelId);
 
   const handleSubmit = async () => {
     if (!currentUser || !canSubmit) return;
@@ -86,19 +87,21 @@ export default function EventModal({ ctx, defaultType = 'inquiry', onClose }: Pr
             </div>
           )}
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Канал связи</label>
-            <select
-              value={channelId}
-              onChange={e => setChannelId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
-            >
-              <option value="">Выберите канал</option>
-              {activeChannels.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+          {needsChannel && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Канал связи</label>
+              <select
+                value={channelId}
+                onChange={e => setChannelId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+              >
+                <option value="">Выберите канал</option>
+                {activeChannels.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Рекламный источник</label>

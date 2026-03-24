@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AppState, User, CRMEvent, Branch, Channel, AdSource } from '@/types/crm';
 import { initialState } from '@/data/initial';
-import { fetchData, fetchEvents, createEvent, addItem, updateItem, removeItem, authUser, setUserPassword } from '@/api/client';
+import { fetchData, fetchEvents, createEvent, updateEvent, deleteEvent, addItem, updateItem, removeItem, authUser, setUserPassword } from '@/api/client';
 import LoginPage from '@/pages/LoginPage';
 import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
@@ -20,6 +20,8 @@ export interface AppContext {
   login: (userId: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   addEvent: (event: Omit<CRMEvent, 'id' | 'createdAt'>) => Promise<void>;
+  editEvent: (event: CRMEvent) => Promise<void>;
+  removeEvent: (id: string) => Promise<void>;
   addChannel: (name: string) => Promise<void>;
   toggleChannel: (id: string, active: boolean) => Promise<void>;
   removeChannel: (id: string) => Promise<void>;
@@ -73,6 +75,16 @@ export default function App() {
     const res = await createEvent(event);
     const newEvent: CRMEvent = { ...event, id: res.id, createdAt: res.createdAt };
     setState(s => ({ ...s, events: [newEvent, ...s.events] }));
+  };
+
+  const editEvent = async (event: CRMEvent) => {
+    await updateEvent(event);
+    setState(s => ({ ...s, events: s.events.map(e => e.id === event.id ? event : e) }));
+  };
+
+  const removeEvent = async (id: string) => {
+    await deleteEvent(id);
+    setState(s => ({ ...s, events: s.events.filter(e => e.id !== id) }));
   };
 
   const addChannel = async (name: string) => {
@@ -136,6 +148,8 @@ export default function App() {
     login,
     logout,
     addEvent,
+    editEvent,
+    removeEvent,
     addChannel,
     toggleChannel,
     removeChannel,

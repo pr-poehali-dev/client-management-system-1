@@ -52,6 +52,24 @@ export async function removeItem(entity: string, id: string) {
   return res.json();
 }
 
+export async function updateEvent(body: object) {
+  const res = await fetch(URLS.events, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function deleteEvent(id: string) {
+  const res = await fetch(URLS.events, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  return res.json();
+}
+
 export async function authUser(userId: string, password: string) {
   const res = await fetch(URLS.auth, {
     method: 'POST',
