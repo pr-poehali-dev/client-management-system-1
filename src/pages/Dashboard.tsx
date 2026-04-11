@@ -520,16 +520,17 @@ export default function Dashboard({ ctx }: Props) {
               <div className="grid grid-cols-3 gap-2 md:gap-3">
                 {(Object.keys(typeConfig) as EventType[]).map(type => {
                   const cfg = typeConfig[type];
+                  const solidBg = type === 'inquiry' ? 'bg-blue-500 hover:bg-blue-600' : type === 'appointment' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600';
                   return (
                     <button
                       key={type}
                       onClick={() => setModal(type)}
-                      className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 px-2 md:px-5 py-3 md:py-4 bg-card border border-border rounded-xl hover:border-foreground/40 hover:bg-secondary transition-all duration-150 group"
+                      className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 px-2 md:px-5 py-3 md:py-4 ${solidBg} rounded-xl transition-all duration-150 active:scale-95 shadow-sm`}
                     >
-                      <div className={`p-2 rounded-lg ${cfg.bg} group-hover:scale-105 transition-transform`}>
-                        <Icon name={cfg.icon} size={16} className={cfg.color} />
+                      <div className="p-2 rounded-lg bg-white/20">
+                        <Icon name={cfg.icon} size={16} className="text-white" />
                       </div>
-                      <span className="font-medium text-xs md:text-sm text-foreground text-center md:text-left">{cfg.label}</span>
+                      <span className="font-semibold text-xs md:text-sm text-white text-center md:text-left">{cfg.label}</span>
                     </button>
                   );
                 })}
