@@ -269,6 +269,26 @@ export default function AnalyticsPage({ ctx }: Props) {
                     );
                   })}
                 </tbody>
+                <tfoot>
+                  {(() => {
+                    const totals = eventTypes.map(t =>
+                      items.reduce((sum, item) =>
+                        sum + filtered.filter(e => e[idKey as keyof typeof e] === item.id && e.type === t).length, 0)
+                    );
+                    const grandTotal = totals.reduce((a, b) => a + b, 0);
+                    if (grandTotal === 0) return null;
+                    return (
+                      <tr className="border-t-2 border-border bg-secondary/30">
+                        <td className="px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Итого</td>
+                        {totals.map((c, i) => (
+                          <td key={i} className="px-5 py-3.5 text-right stat-number font-semibold text-foreground">{c || '—'}</td>
+                        ))}
+                        <td className="px-5 py-3.5 text-right stat-number font-bold text-foreground">{grandTotal}</td>
+                        <td className="px-5 py-3.5" />
+                      </tr>
+                    );
+                  })()}
+                </tfoot>
               </table>
             </div>
           </div>

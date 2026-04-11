@@ -12,13 +12,32 @@ const typeConfig = {
   sale: { label: 'Продажа', icon: 'TrendingUp', color: 'text-emerald-600', bg: 'bg-emerald-50' },
 };
 
-type Period = 'today' | 'week' | 'month' | 'all';
-const periodLabels: Record<Period, string> = { today: 'Сегодня', week: 'Неделя', month: 'Месяц', all: 'Всё время' };
+type Period = 'today' | 'week' | 'month' | 'all' | `m:${string}`;
+const fixedPeriodLabels: Record<string, string> = { today: 'Сегодня', week: 'Неделя', month: 'Тек. месяц', all: 'Всё время' };
+
+function getMonthOptions(): { value: string; label: string }[] {
+  const now = new Date();
+  const months = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `m:${d.getFullYear()}-${d.getMonth()}`;
+    const label = d.toLocaleDateString('ru', { month: 'long', year: 'numeric' });
+    months.push({ value: key, label: label.charAt(0).toUpperCase() + label.slice(1) });
+  }
+  return months;
+}
 
 type Tab = 'overview' | 'events';
 
 function filterByPeriod<T extends { createdAt: string }>(events: T[], period: Period): T[] {
   if (period === 'all') return events;
+  if (period.startsWith('m:')) {
+    const [year, month] = period.slice(2).split('-').map(Number);
+    return events.filter(e => {
+      const d = new Date(e.createdAt);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+  }
   const now = new Date();
   const start = new Date();
   if (period === 'today') { start.setHours(0, 0, 0, 0); }
@@ -425,16 +444,28 @@ export default function Dashboard({ ctx }: Props) {
       {(!isDirector || tab === 'overview') && (
         <>
           {/* Переключатель периода */}
-          <div className="flex items-center gap-1 bg-secondary rounded-lg p-1 mb-5 md:mb-6 w-full md:w-fit overflow-x-auto">
-            {(Object.keys(periodLabels) as Period[]).map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                {periodLabels[p]}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 mb-5 md:mb-6">
+            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1 overflow-x-auto">
+              {(Object.keys(fixedPeriodLabels) as Period[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {fixedPeriodLabels[p]}
+                </button>
+              ))}
+            </div>
+            <select
+              value={period.startsWith('m:') ? period : ''}
+              onChange={e => { if (e.target.value) setPeriod(e.target.value as Period); }}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all focus:outline-none focus:ring-1 focus:ring-foreground ${period.startsWith('m:') ? 'border-foreground bg-card text-foreground' : 'border-border bg-secondary text-muted-foreground'}`}
+            >
+              <option value="">Месяц...</option>
+              {getMonthOptions().map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Карточки статистики */}
